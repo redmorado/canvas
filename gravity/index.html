@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>canvas</title>
+	<style type="text/css">
+		body{
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+	<script type="text/javascript">
+		(function(){
+			var STAGE_WIDTH, STAGE_HEIGHT;
+			var MOUSE_UP = 1;
+			var MOUSE_DOWN = 2;
+			var canvas, timer, ctx, mouse = {x:Number.MAX_VALUE,y:Number.MAX_VALUE}, circles = [];
+			var gravity = 9.80665;
+			var restitution = 0.7;
+			var mouse_status = MOUSE_UP;
+
+			var init = function(){
+				canvas = document.getElementById('canvas');
+				ctx = canvas.getContext('2d');
+				resizeCanvas();
+				timer = setInterval(interval, 10);
+			};
+
+			var resizeCanvas = function(){
+				canvas.width = STAGE_WIDTH = document.documentElement.clientWidth;
+				canvas.height = STAGE_HEIGHT = document.documentElement.clientHeight;
+			};
+
+			var mouseMove = function(e){
+				mouse.x = e.clientX;
+				mouse.y = e.clientY;
+				//if(circles.length < 1)
+				circles.push(new Circle());
+			};
+
+			var mouseDown = function(e){
+				mouse_status = MOUSE_DOWN;
+			};
+
+			var mouseUp = function(e){
+				mouse_status = MOUSE_UP;
+			};
+
+			var interval = function(){
+				ctx.fillStyle = 'rgb(255,255,255)';
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				for(var i = 0; i < circles.length; i++){
+					var o = circles[i];
+					o.setPosition();
+
+					ctx.fillStyle = o.color;
+					ctx.beginPath();
+					ctx.arc(o.x, o.y, o.radius, 0, Math.PI*2, true);
+					ctx.closePath();
+					ctx.fill();
+//					if(i ===1)console.log(o.vY)
+				}
+			};
+
+			document.addEventListener('DOMContentLoaded', init);
+			document.addEventListener('mousemove', mouseMove);
+			document.addEventListener('mousedown', mouseDown);
+			document.addEventListener('mouseup', mouseUp);
+			window.addEventListener('resize', resizeCanvas);
+
+			var Circle = function(){
+				this.prevX = this.x = mouse.x;
+				this.prevY = this.y = mouse.y;
+				this.radius = 10;
+				this.color = '';
+				this.prevTime = +new Date();
+				this.vY = 0;
+				this.directY = 1;
+
+				this.initialize = function(){
+					this.color = getColor();
+				};
+
+				var getColor = function(){
+					var r = Math.floor(Math.random() * 256);
+					var g = Math.floor(Math.random() * 256);
+					var b = Math.floor(Math.random() * 256);
+					return 'rgb('+255+','+g+','+b+')';
+				};
+
+				this.setPosition = function(){
+					this.prevY = this.y;
+					var time = new Date();
+					var ds = (time - this.prevTime) / 1000;
+					var directY = 1;
+
+					//速度計算
+					this.vY += gravity * ds;
+					if(mouse_status === MOUSE_DOWN){
+						this.vY -= gravity * 2 * ds;
+					}
+
+
+					//var nextY = this.prevY + this.vY * this.vY / gravity;
+					var nextY = this.prevY + this.vY * ds * 1000;
+					if(STAGE_HEIGHT < nextY){
+						nextY = STAGE_HEIGHT - (nextY - STAGE_HEIGHT) * restitution;
+						this.vY *=  -restitution;
+					}
+					this.y = nextY;
+					this.prevTime = time;
+				};
+
+				this.initialize.apply(this, arguments);
+			};
+		})();
+	</script>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+</body>
+</html>
